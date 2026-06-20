@@ -1,0 +1,81 @@
+kubectl -n kube-system exec -it  etcd-master -- sh -c "ETCDCTL_API=3.5 ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key etcdctl endpoint health"
+
+kubectl -n kube-system exec -it  etcd-master -- sh -c "ETCDCTL_API=3 ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key etcdctl --endpoints=https://127.0.0.1:2379 member list"
+
+kubectl -n kube-system exec -it  etcd-master -- sh -c "ETCDCTL_API=3 ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key etcdctl --endpoints=https://127.0.0.1:2379 member list -w table"
+
+https://hackernoon.com/how-upgrade-kubernetes-cluster-on-centos
+
+yum list --showduplicates kubeadm --disableexcludes=kubernetes
+kubectl drain master-node-1 --ignore-daemonsets
+sudo yum install -y kubeadm-1.27.6-0 --disableexcludes=kubernetes
+kubeadm version -o json
+kubeadm upgrade plan
+kubeadm upgrade apply v1.26.9
+yum downgrade -y kubeadm-1.26.9 --disableexcludes=kubernetes
+yum install -y kubelet-1.26.9-0 kubectl-1.26.9-0 --disableexcludes=kubernetes
+sudo systemctl daemon-reload && sudo systemctl restart kubelet
+kubectl uncordon master
+
+worker node
+kubectl drain worker-node-1 --ignore-daemonsets
+yum install -y kubeadm-1.26.9-0 --disableexcludes=kubernetes
+kubeadm upgrade node
+yum install -y kubelet-1.26.9-0 kubectl-1.26.9-0 --disableexcludes=kubernetes
+sudo systemctl daemon-reload && sudo systemctl restart kubelet
+kubectl uncordon worker-node-1
+
+less $HOME/.kube/config
+config file not found
+kubectl get pods -v=6
+you can see now where is the config file
+
+for non-root user
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+kubectl get pods -v=6
+export client=$(grep client-cert /etc/kubernetes/admin.conf |cut -d" " -f 6)
+echo $client
+export key=$(grep client-key-data /etc/kubernetes/admin.conf |cut -d " " -f 6)
+echo $key
+export auth=$(grep certificate-authority-data /etc/kubernetes/admin.conf |cut -d " " -f 6)
+echo $auth
+echo $client | base64 -d - > ./client.pem
+echo $key | base64 -d - > ./client-key.pem
+echo $auth | base64 -d - > ./ca.pem
+kubectl config view | grep server
+curl --cert ./client.pem --key ./client-key.pem --cacert ./ca.pem https://192.168.233.142:6443
+scp client.pem client-key.pem ca.pem root@192.168.233.144
+scp client.pem client-key.pem ca.pem root@192.168.233.144:/root/
+
+
+curl --cert ./client.pem --key ./client-key.pem --cacert ./ca.pem https://192.168.233.142:6443/api/v1/namespaces/default/pods -XPOST -H'Cont
+ent-Type: application/json' -d@curlpod.json
+
+{
+"kind": "Pod",
+"apiVersion": "v1",
+"metadata":{
+"name": "curlpod",
+"namespace": "default",
+"labels": {
+"name": "examplepod"
+}
+},
+"spec": {
+"containers": [{
+"name": "nginx",
+"image": "nginx",
+"ports": [{"containerPort": 80}]
+}]
+}
+}
+kubectl run nginx --image=nginx --dry-run=client -o yaml
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+kubectl create deployment --image=nginx nginx --dry-run=client -o yaml > nginx-deployment.yaml
+kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --port=80 --type=LoadBalancer
+
