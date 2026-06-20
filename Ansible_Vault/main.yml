@@ -1,0 +1,24 @@
+---
+- hosts: all
+  become: yes
+  name: Hello vault
+  gather_facts: no
+  
+  vars_files:
+    - api_key.yml
+
+  tasks:
+    - name: Echo api_key
+      shell: echo $API_KEY
+      environment:
+        API_KEY: "{{ my_key }}"
+      register: testing
+    
+    - name: show the results
+      debug: var=testing.stdout
+
+
+# ansible-vault -rekey <file>
+# ansible-vault edit <file>
+# ansible-vault encrypt <file>
+# ansible-playbook main.yml --ask-vault-pass

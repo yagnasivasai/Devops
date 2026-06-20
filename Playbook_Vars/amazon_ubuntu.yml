@@ -1,0 +1,45 @@
+---
+- name: Installing Apache in AMAZONLINUX & UBUNTU
+  hosts: all
+  become: true
+  
+  pre_tasks:
+    - name: loadvariables
+      include_vars: "{{ item }}"
+      with_first_found:
+        - "vars_{{ ansible_distribution }}.yml"
+        - "vars_default.yml"
+
+  tasks:
+    - name: Installing Apache.
+      package:
+        name: "{{ apache_package }}"
+        state: present
+
+    - name: Ensure If apache is boot up enabled.
+      service:
+        name: "{{ apache_service }}"
+        state: started
+        enabled: true 
+
+    - name: Copy Configuration files
+      copy:
+        src: "{{ item.src}}"
+        dest: "{{ item.dest}}"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - restart apache
+      with_items:
+        - src: index.html
+          dest: /var/www/html/index.html
+
+    - name: Make sure handlers are flushed immediately.
+      meta: flush_handlers
+  
+  handlers:
+    - name: restart apache
+      service:
+        name: "{{ apache_service }}"
+        state: restarted

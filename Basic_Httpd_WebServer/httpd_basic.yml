@@ -1,0 +1,10 @@
+---
+- name: Install Httpd
+  hosts: app
+  become: True
+
+  tasks:
+    - name: Httpd Installing
+      command: yum install httpd -y
+    - name: Starting HTTPD 
+      command: service httpd start

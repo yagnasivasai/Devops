@@ -1,0 +1,20 @@
+---
+- name: Installing Apache in AMAZONLINUX & UBUNTU
+  hosts: all
+  become: true
+
+  handlers:
+    - import_tasks: handlers/handlers.yml
+  
+  pre_tasks:
+    - name: loadvariables
+      include_vars: "{{ item }}"
+      with_first_found:
+        - "vars_{{ ansible_distribution }}.yml"
+        - "vars_default.yml"
+
+  tasks:
+    - import_tasks: tasks/main.yml
+  
+  
+    
