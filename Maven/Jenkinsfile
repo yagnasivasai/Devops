@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+    tools {
+        git 'Default'
+        terraform 'terraform'
+        maven 'mvn'
+    }
+
+    stages {
+        stage('Checkout SCM') {
+            steps {
+                cleanWs()
+
+                git branch: 'main', url: 'https://github.com/yagnasivasai/terraform.git'
+                sh 'git clone https://github.com/yagnasivasai/terraform.git'
+            }
+        }
+
+        stage('Maven build'){
+            steps {
+                sh '''
+                cd task_13_maven
+                mvn package
+                '''
+            }
+        }
+            
+
+        stage('Building Docker Image'){
+            steps{
+                sh '''
+                    cd task_13_maven
+                    echo "alias docker='sudo docker'" >> ~/.bashrc
+                    sudo usermod -aG docker $USER
+                    sudo chmod 777 /var/run/docker.sock
+                    docker build -t yaznasivasai/tomcat:v1 .
+                '''
+            }
+        }
+
+        stage('Pushing Docker Images to DockerHub'){
+            steps{
+                withCredentials([string(credentialsId: 'DockerHub', variable: 'DockerPasswd')]) {
+                sh "docker login -u yaznasivasai -p ${DockerPasswd}"
+            }
+                sh 'docker push yaznasivasai/tomcat:v1'
+            }
+            
+        }  
+       
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
